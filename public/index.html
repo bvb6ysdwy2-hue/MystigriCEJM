@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MISTIGRI CEJM 😈</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<script src="/socket.io/socket.io.js"></script>
+<style>
+:root {
+  --rose:       #FFB3C6;
+  --rose-d:     #FF6B9D;
+  --lilas:      #C9B8FF;
+  --lilas-d:    #8B6FFF;
+  --menthe:     #B8F0E0;
+  --menthe-d:   #3ECDA0;
+  --jaune:      #FFF3B0;
+  --peche:      #FFD4A8;
+  --bg:         #FFF0F8;
+  --text:       #2D1B4E;
+  --text-mid:   #5A3E7A;
+  --shadow:     rgba(139,111,255,0.2);
+  --red:        #C0392B;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; }
+
+body {
+font-family: ‘Nunito’, sans-serif;
+background: var(–bg);
+height: 100%;
+position: relative;
+}
+
+/* ── SANG ─────────────────────────────── */
+.blood-side {
+position: fixed; top:0; width:70px; height:100%;
+pointer-events:none; z-index:1; opacity:0;
+transition: opacity 1.2s;
+}
+.blood-side.left  { left:0;  background: linear-gradient(to right, rgba(192,57,43,.4), transparent); }
+.blood-side.right { right:0; background: linear-gradient(to left,  rgba(192,57,43,.4), transparent); }
+.blood-drop {
+position:fixed; width:10px; border-radius:0 0 50% 50%;
+background:var(–red); pointer-events:none; z-index:2;
+opacity:0; height:0;
+}
+body.horror .blood-side { opacity:1; }
+body.horror .blood-drop { animation: drip linear forwards; }
+@keyframes drip {
+0%   { opacity:1; height:0; }
+80%  { opacity:1; }
+100% { opacity:0; height:110px; }
+}
+@keyframes shake {
+0%,100%{ transform:translateX(0) rotate(0); }
+15%    { transform:translateX(-12px) rotate(-1.5deg); }
+30%    { transform:translateX(12px)  rotate(1.5deg); }
+45%    { transform:translateX(-8px); }
+60%    { transform:translateX(8px); }
+75%    { transform:translateX(-4px); }
+90%    { transform:translateX(4px); }
+}
+body.shake { animation: shake .6s ease-in-out; }
+
+/* ── SCREAMER ─────────────────────────── */
+#screamer {
+display:none; position:fixed; inset:0; z-index:9999;
+background:#000; align-items:center; justify-content:center;
+flex-direction:column; gap:20px;
+}
+#screamer.active { display:flex; animation: screamBg .15s steps(1) infinite; }
+@keyframes screamBg {
+0%  { background:#000; }
+50% { background:#110000; }
+}
+.drh-svg-wrap {
+animation: drhBounce .12s ease-in-out infinite alternate;
+filter: drop-shadow(0 0 50px #ff0000) drop-shadow(0 0 100px #880000);
+width: min(80vw, 380px);
+}
+@keyframes drhBounce {
+from { transform: scale(1) rotate(-3deg); }
+to   { transform: scale(1.1) rotate(3deg); }
+}
+.scream-txt {
+font-family:‘Fredoka One’,cursive;
+color:#FF0000; font-size:clamp(1.3rem,5vw,2.2rem);
+text-align:center; padding:0 20px;
+text-shadow:0 0 30px #ff0000;
+animation: screamLetter .2s ease-in-out infinite alternate;
+}
+@keyframes screamLetter {
+from { letter-spacing:1px; }
+to   { letter-spacing:6px; }
+}
+#screamer-btn {
+background:#ff0000; color:#fff; border:none;
+font-family:‘Fredoka One’,cursive; font-size:1.1rem;
+padding:14px 35px; border-radius:50px; cursor:pointer;
+animation:pulsebtn .4s ease-in-out infinite alternate;
+}
+@keyframes pulsebtn {
+from { transform:scale(1); }
+to   { transform:scale(1.08); box-shadow:0 0 25px #ff0000; }
+}
+
+/* ── GIFT OVERLAY ─────────────────────── */
+#gift-overlay {
+display:none; position:fixed; inset:0; z-index:8000;
+background:rgba(0,0,0,.65); backdrop-filter:blur(4px);
+align-items:center; justify-content:center; flex-direction:column; gap:18px;
+}
+#gift-overlay.active { display:flex; }
+.gift-emoji {
+font-size:clamp(80px,20vw,130px);
+cursor:pointer;
+animation:floatBox 1.8s ease-in-out infinite alternate;
+filter:drop-shadow(0 10px 30px rgba(0,0,0,.5));
+transition:transform .15s;
+}
+.gift-emoji:hover { transform:scale(1.12) rotate(6deg); }
+@keyframes floatBox {
+from { transform:translateY(0); }
+to   { transform:translateY(-18px); }
+}
+.gift-title {
+font-family:‘Fredoka One’,cursive; font-size:clamp(1.3rem,5vw,2rem);
+color:#fff; text-align:center; padding:0 20px;
+text-shadow:0 2px 12px rgba(0,0,0,.6);
+}
+.gift-sub {
+font-size:.95rem; color:rgba(255,255,255,.8);
+text-align:center; padding:0 20px;
+}
+
+/* ── TOAST ────────────────────────────── */
+#toast {
+position:fixed; bottom:28px; left:50%;
+transform:translateX(-50%) translateY(100px);
+background:var(–lilas-d); color:#fff;
+padding:11px 24px; border-radius:50px;
+font-family:‘Fredoka One’,cursive; font-size:.95rem;
+z-index:5000; transition:transform .3s ease;
+white-space:nowrap; box-shadow:0 5px 20px rgba(0,0,0,.3);
+max-width:90vw; overflow:hidden; text-overflow:ellipsis;
+}
+#toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ── SCREENS ──────────────────────────── */
+.screen { display:none; position:absolute; inset:0; overflow-y:auto; z-index:10; }
+.screen.active { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:18px; }
+
+/* ── HOME ─────────────────────────────── */
+.home-title {
+font-family:‘Fredoka One’,cursive;
+font-size:clamp(2.8rem,10vw,5.5rem);
+color:var(–lilas-d); text-align:center; line-height:1.05;
+text-shadow: 4px 4px 0 var(–rose), 8px 8px 0 rgba(139,111,255,.2);
+}
+.home-sub { font-size:1rem; color:var(–text-mid); text-align:center; font-weight:700; }
+.panel {
+background:#fff; border-radius:28px;
+padding:28px 24px; box-shadow:0 8px 35px var(–shadow);
+width:100%; max-width:440px; display:flex; flex-direction:column; gap:16px;
+}
+.panel h2 { font-family:‘Fredoka One’,cursive; color:var(–lilas-d); font-size:1.3rem; text-align:center; }
+.field { display:flex; flex-direction:column; gap:6px; }
+.field label { font-weight:800; font-size:.82rem; text-transform:uppercase; letter-spacing:.8px; color:var(–text); }
+.field input {
+border:3px solid var(–lilas); border-radius:14px;
+padding:11px 16px; font-family:‘Nunito’,sans-serif;
+font-size:1rem; font-weight:700; color:var(–text); outline:none;
+transition:border-color .2s, box-shadow .2s;
+}
+.field input:focus { border-color:var(–lilas-d); box-shadow:0 0 0 4px rgba(201,184,255,.3); }
+.btn {
+border:none; border-radius:18px; padding:15px;
+font-family:‘Fredoka One’,cursive; font-size:1.2rem;
+cursor:pointer; transition:transform .2s, box-shadow .2s; color:#fff;
+}
+.btn:hover { transform:translateY(-3px); }
+.btn:active { transform:translateY(0); }
+.btn-main  { background:linear-gradient(135deg,var(–lilas-d),var(–rose-d)); box-shadow:0 5px 18px rgba(139,111,255,.4); }
+.btn-green { background:linear-gradient(135deg,var(–menthe-d),var(–lilas-d)); box-shadow:0 5px 18px rgba(62,205,160,.4); }
+.btn-rose  { background:linear-gradient(135deg,var(–rose-d),var(–lilas-d)); box-shadow:0 5px 18px rgba(255,107,157,.4); }
+.divider { text-align:center; color:var(–text-mid); font-weight:800; font-size:.85rem; }
+
+/* ── WAITING ──────────────────────────── */
+.wait-card { background:#fff; border-radius:28px; padding:35px 28px; box-shadow:0 8px 35px var(–shadow); text-align:center; max-width:420px; width:100%; }
+.wait-code {
+font-family:‘Fredoka One’,cursive; font-size:3.5rem; letter-spacing:8px;
+color:var(–lilas-d); background:var(–lilas); padding:14px 24px; border-radius:18px;
+display:inline-block; margin:12px 0; text-shadow:2px 2px 0 rgba(139,111,255,.3);
+}
+.wait-qr { margin:10px auto; border-radius:16px; overflow:hidden; display:block; }
+.wait-sub { color:var(–text-mid); font-size:.9rem; font-weight:700; margin-top:8px; }
+
+/* ── GAME ─────────────────────────────── */
+#screen-game {
+padding:8px; gap:8px;
+display:none; flex-direction:column;
+height:100%; overflow:hidden; justify-content:flex-start;
+}
+#screen-game.active { display:flex; }
+
+.g-header {
+display:flex; justify-content:space-between; align-items:center;
+background:#fff; border-radius:18px; padding:10px 16px;
+box-shadow:0 3px 14px var(–shadow); flex-shrink:0;
+}
+.p-tag { font-family:‘Fredoka One’,cursive; font-size:.85rem; padding:4px 12px; border-radius:20px; color:#fff; }
+.p-tag.p0 { background:var(–rose-d); }
+.p-tag.p1 { background:var(–menthe-d); }
+.p-count { font-size:.75rem; font-weight:800; color:var(–text-mid); margin-top:2px; }
+.turn-pill {
+font-family:‘Fredoka One’,cursive; font-size:.82rem;
+background:var(–jaune); color:var(–text); padding:6px 12px; border-radius:20px;
+text-align:center;
+}
+
+/* OPP AREA */
+.opp-area {
+background:rgba(255,255,255,.7); border-radius:18px;
+padding:10px 12px; flex-shrink:0;
+}
+.area-label { font-family:‘Fredoka One’,cursive; font-size:.82rem; color:var(–text-mid); margin-bottom:6px; text-align:center; }
+.opp-cards { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }
+
+/* CARD BACK */
+.card-back {
+width:56px; height:80px; border-radius:12px;
+background:linear-gradient(135deg,var(–lilas),var(–rose));
+box-shadow:0 3px 10px var(–shadow);
+display:flex; align-items:center; justify-content:center;
+font-size:1.3rem; cursor:pointer; border:3px solid #fff;
+transition:transform .18s, box-shadow .18s; flex-shrink:0;
+}
+.card-back:hover { transform:translateY(-8px) scale(1.1); box-shadow:0 10px 22px var(–shadow); }
+.card-back.pickable { cursor:pointer; }
+.card-back.not-my-turn { cursor:default; opacity:.6; pointer-events:none; }
+
+/* PAIRS */
+.pairs-bar {
+background:rgba(184,240,224,.35); border-radius:14px;
+padding:7px 10px; flex-shrink:0;
+}
+.pairs-chips { display:flex; flex-wrap:wrap; gap:5px; justify-content:center; }
+.pair-chip {
+background:var(–menthe); border:2px solid var(–menthe-d);
+border-radius:20px; padding:3px 10px;
+font-size:.68rem; font-weight:800; color:var(–text);
+}
+
+/* INSTRUCTION */
+.inst-bar {
+border-radius:14px; padding:10px 16px; text-align:center;
+font-weight:800; font-size:.82rem; color:var(–text);
+box-shadow:0 2px 10px rgba(0,0,0,.08); flex-shrink:0;
+transition:background .4s;
+}
+
+/* MY HAND */
+.my-hand-wrap {
+flex:1; overflow-y:auto; background:#fff;
+border-radius:18px; padding:10px;
+box-shadow:0 3px 14px var(–shadow);
+display:flex; flex-wrap:wrap;
+justify-content:center; gap:8px; align-content:flex-start;
+}
+
+/* ── CARD ─────────────────────────────── */
+.card {
+width:88px; height:128px;
+border-radius:14px; border:3px solid rgba(255,255,255,.9);
+display:flex; flex-direction:column;
+padding:6px 5px 5px; cursor:pointer;
+box-shadow:0 4px 12px rgba(0,0,0,.12);
+transition:transform .18s, box-shadow .18s;
+position:relative; overflow:hidden; flex-shrink:0;
+user-select:none;
+}
+.card:hover  { transform:translateY(-10px) scale(1.05); box-shadow:0 12px 24px rgba(0,0,0,.18); z-index:5; }
+.card.sel    { transform:translateY(-14px) scale(1.07); box-shadow:0 14px 28px rgba(139,111,255,.45); border-color:var(–lilas-d); z-index:6; }
+.card.poison { border:3px solid #ff4444 !important; }
+.card-fam {
+font-size:.48rem; font-weight:900; text-transform:uppercase;
+letter-spacing:.4px; color:rgba(0,0,0,.55);
+background:rgba(255,255,255,.55); border-radius:6px;
+padding:2px 4px; line-height:1.2; text-align:center;
+flex-shrink:0;
+}
+.card-ico { font-size:1.6rem; text-align:center; flex-shrink:0; line-height:1; margin:2px 0; }
+.card-ttl {
+font-family:‘Fredoka One’,cursive; font-size:.54rem;
+line-height:1.25; text-align:center; color:#1a0a2e; flex-shrink:0;
+}
+.card-def {
+font-size:.42rem; line-height:1.3; color:rgba(0,0,0,.65);
+font-weight:700; text-align:left; overflow:hidden;
+display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical;
+flex:1;
+}
+
+/* ── END ──────────────────────────────── */
+.end-card { background:#fff; border-radius:28px; padding:35px 28px; box-shadow:0 8px 35px var(–shadow); text-align:center; max-width:450px; width:100%; }
+.end-emoji { font-size:70px; }
+.end-title { font-family:‘Fredoka One’,cursive; font-size:2.2rem; margin:8px 0; color:var(–lilas-d); }
+.end-winner { font-size:1.1rem; font-weight:900; color:var(–menthe-d); margin-bottom:6px; }
+.end-loser  { font-size:.9rem; color:var(–text-mid); margin-bottom:20px; }
+
+/* CONFETTI */
+.conf { position:fixed; width:11px; height:11px; border-radius:3px; pointer-events:none; z-index:7000; animation:confFall linear forwards; }
+@keyframes confFall {
+0%   { transform:translateY(-20px) rotate(0deg); opacity:1; }
+100% { transform:translateY(105vh) rotate(720deg); opacity:0; }
+}
+
+@keyframes cardIn {
+from { transform:scale(0) rotate(15deg); opacity:0; }
+to   { transform:scale(1); opacity:1; }
+}
+.card-in { animation:cardIn .25s cubic-bezier(.34,1.56,.64,1) forwards; }
+</style>
+
+</head>
+<body>
+
+<!-- SANG -->
+
+<div class="blood-side left"></div>
+<div class="blood-side right"></div>
+<div class="blood-drop" style="left:4%;  animation-duration:2.1s; animation-delay:.1s;"></div>
+<div class="blood-drop" style="left:2%;  animation-duration:2.7s; animation-delay:.6s;"></div>
+<div class="blood-drop" style="right:3%; animation-duration:2.3s; animation-delay:.3s;"></div>
+<div class="blood-drop" style="right:6%; animation-duration:1.9s; animation-delay:.9s;"></div>
+<div class="blood-drop" style="left:8%;  animation-duration:3.1s; animation-delay:1.1s;"></div>
+
+<!-- ══ SCREAMER ══════════════════════════════ -->
+
+<div id="screamer">
+  <!-- DRH CREEPYPASTA SVG -->
+  <div class="drh-svg-wrap">
+    <svg viewBox="0 0 300 380" xmlns="http://www.w3.org/2000/svg">
+      <!-- Fond noir -->
+      <rect width="300" height="380" fill="#0a0000"/>
+      <!-- Cou -->
+      <ellipse cx="150" cy="310" rx="38" ry="55" fill="#b8855a"/>
+      <!-- Corps veste -->
+      <ellipse cx="150" cy="360" rx="90" ry="50" fill="#1a0a2e"/>
+      <!-- Chemise blanche -->
+      <rect x="120" y="300" width="60" height="60" rx="5" fill="#fff" opacity=".9"/>
+      <!-- Cravate rouge sang -->
+      <polygon points="150,305 143,310 148,355 150,360 152,355 157,310" fill="#8b0000"/>
+      <!-- Visage déformé -->
+      <ellipse cx="150" cy="185" rx="85" ry="110" fill="#c49a68"/>
+      <!-- Déformation gauche : bosse -->
+      <ellipse cx="76" cy="175" rx="28" ry="35" fill="#b8855a"/>
+      <!-- Déformation droite : creux -->
+      <ellipse cx="224" cy="195" rx="18" ry="25" fill="#9a6040"/>
+      <!-- Texture peau fissurée -->
+      <path d="M100,130 Q115,120 110,145 Q125,138 120,160" stroke="#8a5030" stroke-width="1.5" fill="none" opacity=".7"/>
+      <path d="M170,250 Q185,245 180,265 Q195,258 190,275" stroke="#8a5030" stroke-width="1.5" fill="none" opacity=".7"/>
+      <!-- YEUX exorbités -->
+      <!-- Œil gauche (énorme, exorbité) -->
+      <ellipse cx="108" cy="175" rx="30" ry="36" fill="#fff"/>
+      <ellipse cx="108" cy="178" rx="22" ry="27" fill="#8b0000"/>
+      <ellipse cx="108" cy="178" rx="15" ry="18" fill="#220000"/>
+      <ellipse cx="116" cy="168" rx="5" ry="6" fill="#fff" opacity=".7"/>
+      <!-- Veines œil gauche -->
+      <line x1="82" y1="162" x2="95" y2="172" stroke="#cc0000" stroke-width="1.2" opacity=".8"/>
+      <line x1="80" y1="178" x2="93" y2="177" stroke="#cc0000" stroke-width="1" opacity=".8"/>
+      <line x1="83" y1="193" x2="94" y2="183" stroke="#cc0000" stroke-width="1" opacity=".8"/>
+      <line x1="126" y1="150" x2="122" y2="163" stroke="#cc0000" stroke-width="1" opacity=".7"/>
+      <line x1="134" y1="159" x2="127" y2="168" stroke="#cc0000" stroke-width="1" opacity=".7"/>
+      <!-- Œil droit (plus petit, décalé vers le bas, iris blanc) -->
+      <ellipse cx="196" cy="188" rx="22" ry="28" fill="#fff"/>
+      <ellipse cx="196" cy="188" rx="14" ry="18" fill="#fff" opacity=".95"/>
+      <ellipse cx="196" cy="188" rx="9" ry="11" fill="#000"/>
+      <ellipse cx="202" cy="181" rx="4" ry="4" fill="#fff" opacity=".8"/>
+      <!-- Veines œil droit -->
+      <line x1="177" y1="174" x2="185" y2="182" stroke="#cc0000" stroke-width="1" opacity=".7"/>
+      <line x1="175" y1="189" x2="184" y2="189" stroke="#cc0000" stroke-width="1" opacity=".7"/>
+      <!-- Cils inversés (en bas) -->
+      <path d="M80,200 Q90,215 108,211 Q126,215 136,200" stroke="#1a0a2e" stroke-width="2.5" fill="none"/>
+      <!-- Sourcils tordus/asymétriques -->
+      <path d="M72,148 Q95,138 118,148" stroke="#3a1a0a" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M174,152 Q198,142 225,155" stroke="#3a1a0a" stroke-width="4" fill="none" stroke-linecap="round" transform="rotate(-8,200,150)"/>
+      <!-- Nez déformé, trop bas -->
+      <path d="M140,230 Q150,245 160,230 Q165,255 150,260 Q135,255 140,230" fill="#a8724a" stroke="#8a5030" stroke-width="1"/>
+      <!-- Bouche : sourire trop large avec dents -->
+      <path d="M68,285 Q92,268 120,285 Q150,295 180,285 Q208,268 232,285" stroke="#1a0a2e" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- Dents visibles -->
+      <path d="M90,285 Q95,300 100,285" fill="#f0ede0" stroke="#c8c0a0" stroke-width=".5"/>
+      <path d="M108,288 Q113,305 118,288" fill="#f0ede0" stroke="#c8c0a0" stroke-width=".5"/>
+      <path d="M125,290 Q130,308 135,290" fill="#f0ede0" stroke="#c8c0a0" stroke-width=".5"/>
+      <path d="M143,290 Q148,308 153,290" fill="#f0ede0" stroke="#c8c0a0" stroke-width=".5"/>
+      <path d="M161,288 Q166,305 171,288" fill="#f0ede0" stroke="#c8c0a0" stroke-width=".5"/>
+      <path d="M178,285 Q183,300 188,285" fill="#f0ede0" stroke="#c8c0a0" stroke-width=".5"/>
+      <!-- Dent cassée -->
+      <path d="M195,283 Q197,293 200,289 Q202,285 200,283" fill="#d0ccb0" stroke="#b0a890" stroke-width=".5"/>
+      <!-- Lèvres -->
+      <path d="M68,285 Q150,278 232,285" fill="#7a3030" opacity=".6"/>
+      <!-- Oreille déformée gauche -->
+      <ellipse cx="62" cy="200" rx="18" ry="28" fill="#b8855a" transform="rotate(-15,62,200)"/>
+      <ellipse cx="62" cy="200" rx="8" ry="14" fill="#a07040" transform="rotate(-15,62,200)"/>
+      <!-- Oreille droite normale -->
+      <ellipse cx="238" cy="188" rx="14" ry="20" fill="#c49a68"/>
+      <!-- Cheveux -->
+      <path d="M65,135 Q80,60 150,50 Q220,60 235,135 Q210,90 150,85 Q90,90 65,135Z" fill="#1a0a0a"/>
+      <!-- Mèche qui tombe sur le visage, grisonnante -->
+      <path d="M130,85 Q125,120 130,160" stroke="#4a3a3a" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M133,85 Q128,120 133,160" stroke="#888" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- Badge DRH -->
+      <rect x="112" y="316" width="55" height="28" rx="6" fill="#fff" stroke="#ddd" stroke-width="1"/>
+      <rect x="112" y="316" width="55" height="10" rx="4" fill="#8B6FFF"/>
+      <text x="139" y="324" text-anchor="middle" font-size="7" fill="#fff" font-family="Arial" font-weight="bold">DRH</text>
+      <text x="139" y="337" text-anchor="middle" font-size="5.5" fill="#333" font-family="Arial">Mme PRUD'HOMME</text>
+      <!-- Larme de sang -->
+      <path d="M190,215 Q192,225 188,232 Q185,225 190,215" fill="#8b0000"/>
+    </svg>
+  </div>
+  <div class="scream-txt">CONVOQUÉ·E AUX PRUD'HOMMES !<br>T'aurais dû réviser le Thème 4… 😈</div>
+  <button id="screamer-btn" onclick="closeScreamer()">J'ACCEPTE MON SORT 😭</button>
+</div>
+
+<!-- ══ GIFT OVERLAY ══════════════════════════ -->
+
+<div id="gift-overlay">
+  <div class="gift-title" id="gift-title">🎁 Ton cadeau t'attend…</div>
+  <div class="gift-sub"   id="gift-sub">Clique sur la boîte pour révéler ton sort !</div>
+  <div class="gift-emoji" id="gift-emoji" onclick="openGift()">🎁</div>
+</div>
+
+<!-- ══ TOAST ═════════════════════════════════ -->
+
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════ -->
+
+<!-- ÉCRAN ACCUEIL                              -->
+
+<!-- ══════════════════════════════════════════ -->
+
+<div class="screen active" id="screen-home">
+  <div style="font-size:3rem">⚖️😈</div>
+  <h1 class="home-title">MISTIGRI<br>CEJM</h1>
+  <p class="home-sub">Le jeu où perdre, c'est une sanction disciplinaire 💼</p>
+
+  <div class="panel">
+    <h2>✨ Créer une partie</h2>
+    <div class="field">
+      <label>Ton prénom</label>
+      <input id="create-name" type="text" placeholder="Ex : Inès" maxlength="20">
+    </div>
+    <button class="btn btn-main" onclick="createRoom()">CRÉER LA PARTIE 🎮</button>
+  </div>
+
+  <div class="panel">
+    <h2>🔗 Rejoindre une partie</h2>
+    <div class="field">
+      <label>Ton prénom</label>
+      <input id="join-name" type="text" placeholder="Ex : Lucas" maxlength="20">
+    </div>
+    <div class="field">
+      <label>Code de la partie</label>
+      <input id="join-code" type="text" placeholder="Ex : ABC12" maxlength="5" style="text-transform:uppercase;letter-spacing:4px;font-size:1.3rem">
+    </div>
+    <button class="btn btn-green" onclick="joinRoom()">REJOINDRE 🚀</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+
+<!-- ÉCRAN ATTENTE                              -->
+
+<!-- ══════════════════════════════════════════ -->
+
+<div class="screen" id="screen-wait">
+  <div class="wait-card">
+    <div style="font-size:2.5rem">⏳</div>
+    <h2 style="font-family:'Fredoka One',cursive;color:var(--lilas-d);font-size:1.6rem;margin:8px 0">En attente…</h2>
+    <p style="color:var(--text-mid);font-size:.9rem;margin-bottom:16px">Partage ce code à ton adversaire !</p>
+    <div class="wait-code" id="wait-code">-----</div>
+    <canvas id="qr-canvas" class="wait-qr" width="180" height="180"></canvas>
+    <p class="wait-sub" id="wait-sub">Ou scanne le QR code 📱</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+
+<!-- ÉCRAN JEU                                  -->
+
+<!-- ══════════════════════════════════════════ -->
+
+<div class="screen" id="screen-game">
+
+  <div class="g-header">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+      <span class="p-tag p0" id="hdr-p0">J1</span>
+      <span class="p-count" id="cnt-p0">— cartes</span>
+    </div>
+    <div class="turn-pill" id="turn-pill">…</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+      <span class="p-tag p1" id="hdr-p1">J2</span>
+      <span class="p-count" id="cnt-p1">— cartes</span>
+    </div>
+  </div>
+
+  <div class="opp-area">
+    <div class="area-label" id="opp-label">Main adverse (face cachée)</div>
+    <div class="opp-cards" id="opp-hand"></div>
+  </div>
+
+  <div class="pairs-bar">
+    <div class="area-label">✅ Paires posées</div>
+    <div class="pairs-chips" id="pairs-display"></div>
+  </div>
+
+  <div class="inst-bar" id="inst-bar" style="background:linear-gradient(135deg,var(--jaune),var(--peche))">
+    Chargement…
+  </div>
+
+  <div class="my-hand-wrap" id="my-hand"></div>
+
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+
+<!-- ÉCRAN FIN                                  -->
+
+<!-- ══════════════════════════════════════════ -->
+
+<div class="screen" id="screen-end">
+  <div class="end-card">
+    <div class="end-emoji" id="end-emoji">🏆</div>
+    <h2 class="end-title" id="end-title">GG !</h2>
+    <div class="end-winner" id="end-winner"></div>
+    <div class="end-loser"  id="end-loser"></div>
+  </div>
+  <button class="btn btn-rose" onclick="location.reload()">REJOUER 🔄</button>
+</div>
+
+<script>
+// ============================
+// COULEURS PAR FAMILLE
+// ============================
+const FAMILY_COLORS = {
+  travail:        { bg:'#FFB3C6', dark:'#FF6B9D' },
+  contrats:       { bg:'#C9B8FF', dark:'#8B6FFF' },
+  licenciement:   { bg:'#FFD4A8', dark:'#FF8C42' },
+  syndicat:       { bg:'#B8F0E0', dark:'#3ECDA0' },
+  societes:       { bg:'#FFF3B0', dark:'#F0C020' },
+  responsabilite: { bg:'#FFE4B8', dark:'#FF9F43' },
+  numerique:      { bg:'#B8E8FF', dark:'#3EAACD' },
+  poison:         { bg:'#FF8080', dark:'#CC0000' },
+};
+
+// ============================
+// SOCKET
+// ============================
+const socket = io();
+let myIdx = null;
+let gState = null;
+let giftPhase = 0; // 0=winner, 1=loser
+let giftLoserName = '';
+let giftWinnerName = '';
+
+socket.on('room_created', ({ code, playerIdx }) => {
+  myIdx = playerIdx;
+  showScreen('screen-wait');
+  document.getElementById('wait-code').textContent = code;
+  generateQR(code);
+});
+
+socket.on('room_joined', ({ code, playerIdx, players }) => {
+  myIdx = playerIdx;
+});
+
+socket.on('opponent_joined', ({ players }) => {
+  toast(`${players[1]} a rejoint ! La partie commence 🎉`);
+});
+
+socket.on('game_state', (state) => {
+  gState = state;
+  showScreen('screen-game');
+  renderGame();
+
+  if (state.phase === 'end' && state.lastAction?.gameOver) {
+    setTimeout(() => handleGameOver(state.lastAction.gameOver), 900);
+  }
+});
+
+socket.on('opponent_left', () => {
+  toast('⚠️ Ton adversaire a quitté la partie !');
+  setTimeout(() => location.reload(), 3000);
+});
+
+socket.on('error', (msg) => toast('❌ ' + msg));
+
+// ============================
+// ACTIONS
+// ============================
+function createRoom() {
+  const name = document.getElementById('create-name').value.trim() || 'Joueur 1';
+  socket.emit('create_room', { playerName: name });
+}
+
+function joinRoom() {
+  const name = document.getElementById('join-name').value.trim() || 'Joueur 2';
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (!code) { toast('Entre le code de la partie !'); return; }
+  socket.emit('join_room', { code, playerName: name });
+}
+
+function pickCard(cardId) {
+  socket.emit('pick_card', { cardId });
+}
+
+// ============================
+// RENDU JEU
+// ============================
+function renderGame() {
+  const s = gState;
+  if (!s) return;
+  const isMyTurn = s.currentPlayer === myIdx;
+  const oppIdx   = 1 - myIdx;
+
+  // Header
+  document.getElementById('hdr-p0').textContent = s.players[0] || 'J1';
+  document.getElementById('hdr-p1').textContent = s.players[1] || 'J2';
+  document.getElementById('cnt-p0').textContent = (myIdx === 0 ? s.myHand.length : s.oppHandCount) + ' cartes';
+  document.getElementById('cnt-p1').textContent = (myIdx === 1 ? s.myHand.length : s.oppHandCount) + ' cartes';
+
+  const curName = s.players[s.currentPlayer] || '…';
+  document.getElementById('turn-pill').textContent = isMyTurn ? '🎯 Ton tour !' : `⏳ Tour de ${curName}`;
+
+  // Instruction
+  const inst = document.getElementById('inst-bar');
+  if (isMyTurn) {
+    inst.textContent = '👆 Clique sur une carte RETOURNÉE pour la piocher dans la main adverse !';
+    inst.style.background = 'linear-gradient(135deg, #C9B8FF, #FFB3C6)';
+  } else {
+    inst.textContent = `⏳ Attends que ${curName} pioche…`;
+    inst.style.background = 'linear-gradient(135deg, #FFF3B0, #FFD4A8)';
+  }
+
+  // Main adverse (dos)
+  const oppEl = document.getElementById('opp-hand');
+  oppEl.innerHTML = '';
+  const oppCount = s.oppHandCount;
+  for (let i = 0; i < oppCount; i++) {
+    const cb = document.createElement('div');
+    cb.className = 'card-back' + (isMyTurn ? ' pickable' : ' not-my-turn');
+    cb.textContent = '⚖️';
+    if (isMyTurn) {
+      cb.addEventListener('click', () => {
+        socket.emit('pick_card_by_index', { index: i });
+      });
+    }
+    oppEl.appendChild(cb);
+  }
+  document.getElementById('opp-label').textContent =
+    isMyTurn
+      ? `Main de ${s.players[oppIdx]} — Pioche une carte ! 👆`
+      : `Main de ${s.players[oppIdx]} (face cachée)`;
+
+  // Paires
+  renderPairs(s);
+
+  // Ma main
+  renderMyHand(s.myHand, isMyTurn);
+
+  // Toast si action récente
+  if (s.lastAction?.type === 'pick') {
+    const actor = s.players[s.lastAction.player];
+    if (s.lastAction.player !== myIdx) {
+      toast(`${actor} a pioché une carte !`);
+    }
+    if (s.lastAction.pairsFound?.length > 0) {
+      setTimeout(() => toast(`🎉 Paire posée : ${s.lastAction.pairsFound.join(', ')} !`), 700);
+    }
+  }
+}
+
+function renderMyHand(hand, isMyTurn) {
+  const el = document.getElementById('my-hand');
+  el.innerHTML = '';
+  hand.forEach((card, i) => {
+    const c = buildCardEl(card, i);
+    el.appendChild(c);
+  });
+}
+
+function buildCardEl(card, idx) {
+  const colors = FAMILY_COLORS[card.familyId] || { bg:'#f0f0f0', dark:'#999' };
+  const el = document.createElement('div');
+  el.className = 'card card-in' + (card.isPoison ? ' poison' : '');
+  el.style.background = `linear-gradient(160deg, ${colors.bg}, ${colors.bg}cc)`;
+  el.style.animationDelay = (idx * 0.04) + 's';
+
+  el.innerHTML = `
+    <div class="card-fam" style="background:${colors.dark};color:#fff">${card.family}</div>
+    <div class="card-ico">${card.emoji}</div>
+    <div class="card-ttl">${card.title}</div>
+    <div class="card-def">${card.def}</div>
+  `;
+  return el;
+}
+
+function renderPairs(s) {
+  const el = document.getElementById('pairs-display');
+  el.innerHTML = '';
+  const all = [...(s.myPairs || []), ...(s.oppPairs || [])];
+  const counted = {};
+  all.forEach(f => counted[f] = (counted[f] || 0) + 1);
+  Object.entries(counted).forEach(([fam, n]) => {
+    const chip = document.createElement('div');
+    chip.className = 'pair-chip';
+    chip.textContent = `${fam}${n > 1 ? ' ×' + n : ''}`;
+    el.appendChild(chip);
+  });
+  if (all.length === 0) {
+    const chip = document.createElement('div');
+    chip.className = 'pair-chip';
+    chip.style.opacity = '.5';
+    chip.textContent = 'Aucune paire encore…';
+    el.appendChild(chip);
+  }
+}
+
+// ============================
+// FIN DE PARTIE
+// ============================
+function handleGameOver(gameOver) {
+  const loserId   = gameOver.loser;
+  const winnerId  = 1 - loserId;
+  const loserName  = gState.players[loserId]  || 'Perdant';
+  const winnerName = gState.players[winnerId] || 'Gagnant';
+  const iAmLoser   = loserId === myIdx;
+
+  giftLoserName  = loserName;
+  giftWinnerName = winnerName;
+
+  document.body.classList.add('horror');
+  document.body.classList.add('shake');
+  setTimeout(() => document.body.classList.remove('shake'), 700);
+
+  // Gagnant ouvre sa boîte en premier
+  giftPhase = 0;
+  const overlay = document.getElementById('gift-overlay');
+  document.getElementById('gift-title').textContent = `🎁 ${winnerName}, ton cadeau t'attend…`;
+  document.getElementById('gift-sub').textContent   = 'Clique sur la boîte pour révéler ton sort !';
+  document.getElementById('gift-emoji').textContent = '🎁';
+  document.getElementById('gift-emoji').style.filter = '';
+  overlay.classList.add('active');
+}
+
+function openGift() {
+  if (giftPhase === 0) {
+    // Gagnant : bon cadeau
+    document.getElementById('gift-emoji').textContent = '🎊';
+    document.getElementById('gift-emoji').style.animation = 'none';
+    document.getElementById('gift-title').textContent = `🎊 ${giftWinnerName} gagne ! Félicitations !`;
+    document.getElementById('gift-sub').textContent   = `Tu peux souffler… pour l'instant 😈`;
+    spawnConfetti();
+    giftPhase = 1;
+    setTimeout(() => {
+      document.getElementById('gift-title').textContent = `💀 ${giftLoserName}… ta boîte t'attend.`;
+      document.getElementById('gift-sub').textContent   = 'Clique dessus. Si t\'oses.';
+      document.getElementById('gift-emoji').textContent = '📦';
+      document.getElementById('gift-emoji').style.animation = '';
+      document.getElementById('gift-emoji').style.filter = 'drop-shadow(0 0 20px red)';
+    }, 3000);
+  } else if (giftPhase === 1) {
+    // Perdant : SCREAMER
+    document.getElementById('gift-overlay').classList.remove('active');
+    document.body.classList.remove('horror');
+    triggerScreamer();
+  }
+}
+
+function triggerScreamer() {
+  // Son
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(60, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(2200, ctx.currentTime + 0.25);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+    osc.start(); osc.stop(ctx.currentTime + 2.5);
+  } catch(e) {}
+  document.getElementById('screamer').classList.add('active');
+}
+
+function closeScreamer() {
+  document.getElementById('screamer').classList.remove('active');
+  showEndScreen();
+}
+
+function showEndScreen() {
+  const loserId   = gState.lastAction.gameOver.loser;
+  const winnerId  = 1 - loserId;
+  showScreen('screen-end');
+  document.getElementById('end-emoji').textContent  = '🏆';
+  document.getElementById('end-title').textContent  = `GG ${gState.players[winnerId]} !`;
+  document.getElementById('end-winner').textContent = `🌟 ${gState.players[winnerId]} s'en sort avec le diplôme !`;
+  document.getElementById('end-loser').textContent  = `😭 ${gState.players[loserId]} est convoqué·e aux Prud'hommes… Révise le Thème 4 !`;
+  spawnConfetti();
+}
+
+// ============================
+// QR CODE (vanilla)
+// ============================
+function generateQR(code) {
+  const url = window.location.origin + '?join=' + code;
+  // Simple QR via API externe gratuite
+  const canvas = document.getElementById('qr-canvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => { ctx.drawImage(img, 0, 0, 180, 180); };
+  img.onerror = () => {
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0,0,180,180);
+    ctx.fillStyle = '#8B6FFF';
+    ctx.font = 'bold 14px Nunito';
+    ctx.textAlign = 'center';
+    ctx.fillText(url, 90, 90);
+  };
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}&color=8B6FFF&bgcolor=FFF0F8`;
+}
+
+// Pré-remplir le code depuis l'URL
+window.addEventListener('load', () => {
+  const params = new URLSearchParams(window.location.search);
+  const joinCode = params.get('join');
+  if (joinCode) {
+    document.getElementById('join-code').value = joinCode.toUpperCase();
+    document.getElementById('join-name').focus();
+  }
+});
+
+// ============================
+// UTILS
+// ============================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function spawnConfetti() {
+  const cols = ['#FFB3C6','#C9B8FF','#B8F0E0','#FFF3B0','#FFD4A8'];
+  for (let i = 0; i < 50; i++) {
+    const el = document.createElement('div');
+    el.className = 'conf';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.background = cols[Math.floor(Math.random() * cols.length)];
+    el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    el.style.animationDelay = (Math.random() * 0.8) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4500);
+  }
+}
+
+// ============================
+// PICK BY INDEX (server side)
+// ============================
+// On écoute la réponse du serveur via game_state
+// Le pick_card_by_index est géré côté serveur
+</script>
+
+</body>
+</html>
